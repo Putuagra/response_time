@@ -11,8 +11,8 @@ load_dotenv()
 token = os.getenv("TOKEN")
 utc_timezone = pytz.utc
 wib_timezone = pytz.timezone('Asia/Jakarta')
-from_date_string = '2024-09-05T00:00:00'
-to_date_string = '2024-09-06T00:00:00'
+from_date_string = '2024-09-08T00:00:00'
+to_date_string = '2024-09-09T00:00:00'
 
 def categorize(value):
     if 1000 < value < 2000:
@@ -32,7 +32,7 @@ def convert_csv(csv_name, excel_name):
         worksheet = writer.sheets['Sheet1']
         worksheet.write('A1', f"Date Range: {from_date_string.replace('T', ' ')} - {to_date_string.replace('T', ' ')}")
         
-        color = ['1bf505','#eaf505', '#FA8072']
+        color = ['66ff66','#ffff66', '#ff6666']
         for col_idx in range(1, 10):
             header_format = workbook.add_format({'bg_color': color[(col_idx - 1) % len(color)], 'align': 'center'})
             worksheet.write(1, col_idx, df_csv.columns[col_idx], header_format) # Adding Color
@@ -100,12 +100,12 @@ def process_df(df):
     return ordered_df
 
 def export(df, csv_name, xlsx_name):
-    column = [
-        # "id",
-        "api_name",
-        "time",
-        "value",
-    ]
+    # column = [
+    #     # "id",
+    #     "api_name",
+    #     "time",
+    #     "value",
+    # ]
 
     # df.to_csv(csv_name, index=False, columns=column)
     # df.to_csv("output_percentile.csv", index=False)
@@ -130,9 +130,6 @@ def main():
     df_merged.rename(columns={'red': 'red 95'}, inplace=True)
     df_merged.rename(columns={'api_name': 'Api Name'}, inplace=True)
     
-    # export(df_50,"output_percentile_50.csv","output_percentile_50.xlsx")
-    # export(df_75,"output_percentile_75.csv","output_percentile_75.xlsx")
-    # export(df_95,"output_percentile_95.csv","output_percentile_95.xlsx")
     export(df_merged,"output_percentile_merge.csv","output_percentile_merge.xlsx")
   
 if __name__ == "__main__":

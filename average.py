@@ -37,8 +37,7 @@ def convert_csv(csv_name, excel_name):
 
         wrap_format = workbook.add_format({'align': 'center'})
         worksheet.set_column(0, 0, 40, wrap_format)
-        for col_idx in range(1, len(df_csv.columns)):
-            worksheet.set_column(col_idx, col_idx, 10, wrap_format)
+        worksheet.set_column(1, len(df_csv.columns)-1, 10, wrap_format)
             
 def remove_csv(csv_name):
     try:
@@ -50,42 +49,42 @@ def remove_csv(csv_name):
         print(f"Error occurred while trying to remove {csv_name}: {e}")
         
 def format_date(date):
-    init_datetime = datetime.strptime(date, '%Y-%m-%dT%H:%M:%S')
-    wib_datetime = wib_timezone.localize(init_datetime)
-    utc_datetime = wib_datetime.astimezone(utc_timezone)
-    formatted_date = utc_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
-    return formatted_date
+    init_datetime = datetime.strptime(date, '%Y-%m-%dT%H:%M:%S') # convert string to datetime
+    utc_datetime = wib_timezone.localize(init_datetime).astimezone(utc_timezone)
+    return utc_datetime.strftime('%Y-%m-%dT%H:%M:%SZ') # convert datetime to string
+
+def request(url):
+    headers = {
+            "Authorization": f"Api-Token {token}",
+            "accept": "text/csv, application/json; q=0.1",
+        }
+    try:
+        response = requests.get(url, headers=headers, verify=False)
+        response.raise_for_status()
+        print("Success fetching data")
+        return pd.read_csv(StringIO(response.text))
+    except requests.exceptions.HTTPError as e:
+        print(f"HTTP error occurred: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    
+    return pd.DataFrame()
 
 def fetch_data():
     from_date_formatted = format_date(from_date_string)
     to_date_formatted = format_date(to_date_string)
     url = f"https://n01.scf488.dynatrace-managed.com/e/97937fef-013b-4e90-acc8-8267cc898592/api/v2/metrics/query?metricSelector=(builtin:service.keyRequest.response.time:splitBy(\"dt.entity.service_method\"):avg:names:sort(dimension(\"dt.entity.service_method.name\",ascending)):limit(700)):limit(700):names&from={from_date_formatted}&to={to_date_formatted}&resolution=1m"
-    payload = {}
-    headers = {
-            "Authorization": f"Api-Token {token}",
-            "accept": "text/csv, application/json; q=0.1",
-        }
-    
-    response = requests.request("GET", url, headers=headers, data=payload, verify=False)
-    if response.status_code == 200:
-        data = StringIO(response.text)
-        print("Success fetching data")
-        return pd.read_csv(data)
-    else:
-        print(f"Failed to retrieve data from {url}: {response.status_code}")
-        return pd.DataFrame()
+    df = request(url)
+    return df
 
 def process_df(df):
     df['api_name']=df['dt.entity.service_method.name']
-    # df['id'] = df['metricId'].apply(extract_percentile)
-    # df = df.drop('metricId', axis=1)
-    # df = df.drop('dt.entity.service_method', axis=1)
+    # df = df.drop(['metricId', 'dt.entity.service_method', 'dt.entity.service_method.name'], axis=1)
     df['value'] = round((df['value'] / 1000),2)
 
     if 'time' in df.columns:
-        df['time'] = pd.to_datetime(df['time'])
-        df['time'] = df['time'].dt.tz_localize(utc_timezone).dt.tz_convert(wib_timezone)
-        df['time'] = df['time'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        df['time'] = pd.to_datetime(df['time']).dt.tz_localize(utc_timezone).dt.tz_convert(wib_timezone) # convert utc to wib
+        df['time'] = df['time'].dt.strftime('%Y-%m-%d')
 
     df['category'] = df['value'].apply(categorize)
 
@@ -99,8 +98,7 @@ def export(df, csv_name, xlsx_name):
     remove_csv(csv_name)
         
 def main():
-    df = fetch_data()
-    df_avg = process_df(df)
+    df_avg = process_df(fetch_data())
     export(df_avg,"output.csv","output.xlsx")
     
 if __name__ == "__main__":

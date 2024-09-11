@@ -12,7 +12,6 @@ utc_timezone = pytz.utc
 wib_timezone = pytz.timezone('Asia/Jakarta')
 from_date_string = '2024-08-26T00:00:00'
 to_date_string = '2024-09-11T00:00:00'
-url_error_rate = f"https://n01.scf488.dynatrace-managed.com/e/97937fef-013b-4e90-acc8-8267cc898592/api/v2/metrics/query?metricSelector=(builtin:service.keyRequest.errors.server.rate:splitBy(\"dt.entity.service_method\"):sort(value(auto,descending)):limit(700)):limit(700):names&from=-1d/d&to=now/d&mzSelector=mzId(-413968960818628324)"
 
 def format_date(date):
     init_datetime = datetime.strptime(date, '%Y-%m-%dT%H:%M:%S') # convert string to datetime

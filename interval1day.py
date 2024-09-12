@@ -120,7 +120,7 @@ def export(df, csv_name, xlsx_name):
     remove_csv(csv_name)
 
 def main():
-    percentiles = [50.0, 75.0, 95.0]
+    percentiles = [50.0, 70.0, 90.0]
     percentile_dfs = {}
     
     for p in percentiles:
@@ -130,19 +130,19 @@ def main():
     df_count_err = process_df(fetch_error(), 'error_rate')
     
     df_merged = percentile_dfs[50.0]
-    df_merged = pd.merge(df_merged, percentile_dfs[75.0], on=['time', 'api_name'], how='outer', suffixes=(' 50', ' 75'))
-    df_merged = pd.merge(df_merged, percentile_dfs[95.0], on=['time', 'api_name'], how='outer')
+    df_merged = pd.merge(df_merged, percentile_dfs[70.0], on=['time', 'api_name'], how='outer', suffixes=(' 50', ' 70'))
+    df_merged = pd.merge(df_merged, percentile_dfs[90.0], on=['time', 'api_name'], how='outer')
     df_merged = pd.merge(df_merged, df_count_percent, on=['time', 'api_name'], how='left')
     df_merged = pd.merge(df_merged, df_count_err, on=['time', 'api_name'], how='left')
     
     df_merged.rename(columns={
-        'Percentile': 'Percentile 95', 
+        'Percentile': 'Percentile 90', 
         'api_name': 'API Name', 
         'time': 'Timestamp'
     }, inplace=True)
     df_merged['Error Rate'] = round(df_merged['Error Rate'], 2)
     df_merged['Error Rate'] = df_merged['Error Rate'].apply(lambda x: f"{int(x)} %" if isinstance(x, (float, int)) and x.is_integer() else (f"{x:.2f} %" if pd.notna(x) else x))
-    df_merged = df_merged[['Timestamp', 'API Name', 'Percentile 50', 'Percentile 75', 'Percentile 95', 'Error Rate','Total Request']]
+    df_merged = df_merged[['Timestamp', 'API Name', 'Percentile 50', 'Percentile 70', 'Percentile 90', 'Error Rate','Total Request']]
     
     export(df_merged,"output_percentile_merge_interval_1day.csv","output_percentile_merge_interval_1day.xlsx")
   
